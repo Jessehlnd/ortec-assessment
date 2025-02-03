@@ -65,15 +65,20 @@ namespace TaskList
                 case "deadline":
                     SetDeadline(commandRest[1]);
                     break;
+                case "today":
+                    Today();
+                    break;
                 default:
                     Error(command);
                     break;
             }
         }
 
-        private void Show()
+        private void Show(IDictionary<string, IList<Task>>? tasksToShow = null)
         {
-            foreach (var project in tasks)
+            var tasksToDisplay = tasksToShow ?? tasks;
+
+            foreach (var project in tasksToDisplay)
             {
                 console.WriteLine(project.Key);
                 foreach (var task in project.Value)
@@ -86,6 +91,26 @@ namespace TaskList
                     );
                 }
                 console.WriteLine();
+            }
+        }
+
+        private void Today()
+        {
+            var today = DateTime.Today;
+            var tasksDueToday = tasks.ToDictionary(
+                project => project.Key,
+                project =>
+                    (IList<Task>)
+                        project
+                            .Value.Where(task =>
+                                task.Deadline.HasValue && task.Deadline.Value.Date == today
+                            )
+                            .ToList()
+            );
+
+            if (tasksDueToday.Count > 0)
+            {
+                Show(tasksDueToday);
             }
         }
 
@@ -111,7 +136,7 @@ namespace TaskList
 
         private void AddTask(string project, string description)
         {
-            if (!tasks.TryGetValue(project, out IList<Task> projectTasks))
+            if (!tasks.TryGetValue(project, out IList<Task>? projectTasks))
             {
                 Console.WriteLine("Could not find a project with the name \"{0}\".", project);
                 return;
