@@ -33,7 +33,7 @@ namespace TaskList
             {
                 console.Write("> ");
                 var command = console.ReadLine();
-                if (command == QUIT)
+                if (command == null || command == QUIT)
                 {
                     break;
                 }
@@ -68,9 +68,39 @@ namespace TaskList
                 case "today":
                     Today();
                     break;
+                case "view-by-deadline":
+                    ViewByDeadline();
+                    break;
                 default:
                     Error(command);
                     break;
+            }
+        }
+
+        private void ViewByDeadline()
+        {
+            var tasksByDeadline = tasks
+                .Values.SelectMany(t => t)
+                .GroupBy(t => t.Deadline)
+                .OrderBy(g => g.Key ?? DateTime.MaxValue);
+
+            foreach (var deadlineGroup in tasksByDeadline)
+            {
+                string deadline = deadlineGroup.Key.HasValue
+                    ? deadlineGroup.Key.Value.ToString("dd-MM-yyyy")
+                    : "No deadline";
+                console.WriteLine(deadline + ":");
+
+                var tasksByProject = deadlineGroup.GroupBy(t => t.Description).OrderBy(g => g.Key);
+
+                foreach (var projectGroup in tasksByProject)
+                {
+                    console.WriteLine($"    {projectGroup.Key}:");
+                    foreach (var task in projectGroup)
+                    {
+                        console.WriteLine($"        {task.Id}: {task.Description}");
+                    }
+                }
             }
         }
 
@@ -85,7 +115,7 @@ namespace TaskList
                 {
                     console.WriteLine(
                         "    [{0}] {1}: {2}",
-                        (task.Done ? 'x' : ' '),
+                        task.Done ? 'x' : ' ',
                         task.Id,
                         task.Description
                     );
@@ -223,6 +253,8 @@ namespace TaskList
             console.WriteLine("  check <task ID>");
             console.WriteLine("  uncheck <task ID>");
             console.WriteLine("  deadline <task ID> <date>");
+            console.WriteLine("  today");
+            console.WriteLine("  view-by-deadline");
             console.WriteLine();
         }
 
